@@ -90,7 +90,19 @@ async function deleteBookFromCollection(
   expect(response.status).toBe(204);
 }
 
-test('API flow: register, login, add, list, delete, and logout', async () => {
+async function deleteUser(token: string, userId: string) {
+  const response = await fetch(`${baseURL}/Account/v1/User/${userId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  expect(response.status).toBe(204);
+}
+
+test('API flow: register, login, add, list, delete, and delete user', async () => {
   const uniqueSuffix = Date.now();
   const username = `apiuser${uniqueSuffix}`;
   const password = 'Test@1234!';
@@ -98,14 +110,11 @@ test('API flow: register, login, add, list, delete, and logout', async () => {
 
   const createdUser = await createUser({ userName: username, password });
   const token = await generateToken(username, password);
-
   await addBookToCollection(token, createdUser.userID, isbn);
-
   const books = await getUserBooks(token, createdUser.userID);
   expect(books.some((book) => book.isbn === isbn)).toBeTruthy();
-
   await deleteBookFromCollection(token, createdUser.userID, isbn);
-
   const remainingBooks = await getUserBooks(token, createdUser.userID);
   expect(remainingBooks.some((book) => book.isbn === isbn)).toBeFalsy();
+  await deleteUser(token, createdUser.userID);
 });
